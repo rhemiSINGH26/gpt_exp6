@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-Powered Medical Symptom Assistant using GPT-4 | Experiment 5</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-inner container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            <path d="M12 5v14"/>
+            <path d="M5 12h14"/>
+          </svg>
+        </div>
+        <div>
+          <div class="badge-lab">24CS2506 • Experiment 5</div>
+          <h1 class="brand-title">AI-Powered Medical Symptom Assistant</h1>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="system-status" id="systemStatus">
+          <span class="status-dot"></span>
+          <span class="status-text">Connecting to GPT-4 Engine...</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Quick Scenario Loader Bar -->
+  <section class="demo-bar">
+    <div class="container demo-inner">
+      <span class="demo-label">🧪 Quick Viva Presets:</span>
+      <div class="demo-buttons">
+        <button type="button" class="btn-demo" onclick="loadSample('respiratory')">
+          <span class="btn-icon">🤧</span> Respiratory (Lab Example)
+        </button>
+        <button type="button" class="btn-demo" onclick="loadSample('headache')">
+          <span class="btn-icon">🧠</span> Tension & Migraine
+        </button>
+        <button type="button" class="btn-demo btn-demo-emergency" onclick="loadSample('emergency')">
+          <span class="btn-icon">🚨</span> Emergency Red Flag
+        </button>
+        <button type="button" class="btn-demo btn-demo-reset" onclick="resetForm()">
+          <span class="btn-icon">🔄</span> Clear
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Application Content -->
+  <main class="container main-content">
+
+    <!-- Left Column: Patient Intake Form -->
+    <section class="intake-section">
+      <div class="card card-form">
+        <div class="card-header">
+          <h2>Patient Intake & Clinical Context</h2>
+          <p class="subtitle">Enter patient information and describe symptoms in natural language.</p>
+        </div>
+
+        <form id="symptomForm" onsubmit="handleAnalysisSubmit(event)">
+          
+          <!-- Natural Language Input -->
+          <div class="form-group">
+            <label for="symptoms_text" class="field-label">
+              <span>Natural Language Symptom Description</span>
+              <span class="required">*</span>
+            </label>
+            <div class="input-helper">A user does not have to enter symptoms in a fixed format. Describe symptoms freely in natural conversational language.</div>
+            <textarea 
+              id="symptoms_text" 
+              name="symptoms_text" 
+              rows="4" 
+              placeholder="e.g., I've had a fever and cough since yesterday. I also feel tired and have a mild headache..." 
+              required
+            ></textarea>
+          </div>
+
+          <!-- Basic Patient Profile Grid -->
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="age" class="field-label">
+                <span>Age</span>
+                <span class="required">*</span>
+              </label>
+              <input type="number" id="age" name="age" min="1" max="120" placeholder="e.g., 22" value="22" required>
+            </div>
+
+            <div class="form-group">
+              <label for="sex" class="field-label">
+                <span>Sex</span>
+              </label>
+              <select id="sex" name="sex">
+                <option value="Female">Female</option>
+                <option value="Male" selected>Male</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="duration" class="field-label">
+                <span>Duration</span>
+                <span class="required">*</span>
+              </label>
+              <input type="text" id="duration" name="duration" placeholder="e.g., 2 days, 1 week" value="2 days" required>
+            </div>
+
+            <div class="form-group">
+              <label class="field-label">
+                <span>Reported Severity</span>
+                <span class="required">*</span>
+              </label>
+              <div class="severity-selector">
+                <label class="severity-option severity-mild">
+                  <input type="radio" name="severity" value="Mild" checked>
+                  <span class="severity-badge">Mild</span>
+                </label>
+                <label class="severity-option severity-moderate">
+                  <input type="radio" name="severity" value="Moderate">
+                  <span class="severity-badge">Moderate</span>
+                </label>
+                <label class="severity-option severity-severe">
+                  <input type="radio" name="severity" value="Severe">
+                  <span class="severity-badge">Severe</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Clinical Context Fields -->
+          <div class="form-group">
+            <label for="medical_history" class="field-label">
+              <span>Previous Medical Conditions</span>
+            </label>
+            <input type="text" id="medical_history" name="medical_history" placeholder="e.g., Asthma, Hypertension, Diabetes, or None" value="None">
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="medications" class="field-label">
+                <span>Current Medications</span>
+              </label>
+              <input type="text" id="medications" name="medications" placeholder="e.g., Inhaler, Paracetamol, or None" value="None">
+            </div>
+
+            <div class="form-group">
+              <label for="allergies" class="field-label">
+                <span>Known Allergies</span>
+              </label>
+              <input type="text" id="allergies" name="allergies" placeholder="e.g., Penicillin, Dust, or None" value="None">
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary" id="btnSubmit">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+            <span>Analyze Symptoms with GPT-4</span>
+          </button>
+        </form>
+
+        <!-- Pipeline Workflow Visualization -->
+        <div class="workflow-card">
+          <div class="workflow-title">System Workflow Pipeline (Pages 3-4)</div>
+          <div class="pipeline-steps">
+            <div class="step-badge active" title="Natural Language Input">1. User Input</div>
+            <div class="step-arrow">→</div>
+            <div class="step-badge" id="stepProfile">2. Patient Profile</div>
+            <div class="step-arrow">→</div>
+            <div class="step-badge" id="stepExtract">3. Extraction</div>
+            <div class="step-arrow">→</div>
+            <div class="step-badge" id="stepPrompt">4. Prompt Gen</div>
+            <div class="step-arrow">→</div>
+            <div class="step-badge" id="stepGPT">5. GPT-4</div>
+            <div class="step-arrow">→</div>
+            <div class="step-badge" id="stepAnalysis">6. Triage & Report</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Right Column: Structured Results & Clinical Report -->
+    <section class="results-section">
+      
+      <!-- Placeholder State -->
+      <div class="card card-placeholder" id="placeholderView">
+        <div class="placeholder-icon">🩺</div>
+        <h3>Structured Symptom Analysis</h3>
+        <p>Complete the patient context form on the left or click one of the quick viva presets to initiate the clinical symptom analysis pipeline.</p>
+        <div class="sample-prompt-box">
+          <div class="prompt-hint-title">Example Input from Lab Sheet:</div>
+          <div class="prompt-hint-content">"I have a sore throat, mild fever and cough."</div>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div class="card card-loading hidden" id="loadingView">
+        <div class="loader-spinner"></div>
+        <h3 id="loaderTitle">Executing Symptom Extraction...</h3>
+        <p id="loaderSubtitle">GPT-4 is analyzing natural language, cross-referencing patient context, and screening for red flags.</p>
+      </div>
+
+      <!-- Output State -->
+      <div class="card card-results hidden" id="resultsView">
+        
+        <!-- Top Action Bar -->
+        <div class="results-top-bar">
+          <div class="report-meta">
+            <span class="tag-report">Clinical Report</span>
+            <span class="report-id" id="reportIdBadge">Report #</span>
+            <span class="engine-badge" id="reportEngineBadge">GPT-4</span>
+          </div>
+          <div class="action-buttons">
+            <button type="button" class="btn-action" onclick="copyReport()" title="Copy to Clipboard">
+              📋 Copy
+            </button>
+            <button type="button" class="btn-action" onclick="downloadReport('txt')" title="Download Plaintext">
+              📥 TXT
+            </button>
+            <button type="button" class="btn-action" onclick="downloadReport('json')" title="Download JSON">
+              💾 JSON
+            </button>
+            <button type="button" class="btn-action" onclick="window.print()" title="Print / Save PDF">
+              🖨️ Print
+            </button>
+          </div>
+        </div>
+
+        <!-- Triage Level Badge Banner -->
+        <div class="triage-banner" id="triageBanner">
+          <div class="triage-icon" id="triageIcon">ℹ️</div>
+          <div class="triage-content">
+            <div class="triage-level-tag" id="triageLevelTag">Triage Level: Moderate</div>
+            <div class="triage-description" id="triageDesc">Routine Consultation / Monitored Self-Care</div>
+          </div>
+        </div>
+
+        <!-- Critical Red Flags Warning (Rendered dynamically if present) -->
+        <div class="red-flag-alert hidden" id="redFlagBox">
+          <div class="alert-title">
+            <span>🚨 Critical Red Flag Detected</span>
+          </div>
+          <ul id="redFlagList" class="alert-list"></ul>
+        </div>
+
+        <!-- The Exact Structured Report (Format from Lab Sheet) -->
+        <div class="structured-report-container">
+          <div class="report-header-banner">
+            <div class="report-title-main">MEDICAL SYMPTOM ANALYSIS</div>
+            <div class="report-divider">------------------------------------------------------------</div>
+          </div>
+
+          <!-- Reported Symptoms Section -->
+          <div class="report-block">
+            <div class="block-title">Reported Symptoms:</div>
+            <ul class="symptom-bullet-list" id="reportSymptomsList">
+              <!-- Dynamically populated -->
+            </ul>
+          </div>
+
+          <!-- Duration Section -->
+          <div class="report-block">
+            <div class="block-title">Duration:</div>
+            <div class="block-content" id="reportDuration">2 days</div>
+          </div>
+
+          <!-- Possible Conditions Section -->
+          <div class="report-block">
+            <div class="block-title">Possible Conditions:</div>
+            <ol class="conditions-ordered-list" id="reportConditionsList">
+              <!-- Dynamically populated -->
+            </ol>
+          </div>
+
+          <!-- Why These Were Considered Section -->
+          <div class="report-block">
+            <div class="block-title">Why These Were Considered:</div>
+            <div class="block-content highlight-box" id="reportWhyConsidered">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Additional Information Needed Section -->
+          <div class="report-block">
+            <div class="block-title">Additional Information Needed:</div>
+            <ul class="info-bullet-list" id="reportInfoNeeded">
+              <!-- Dynamically populated -->
+            </ul>
+          </div>
+
+          <!-- Medical Attention Section -->
+          <div class="report-block">
+            <div class="block-title">Medical Attention:</div>
+            <div class="block-content attention-box" id="reportMedicalAttention">
+              Seek professional medical evaluation if symptoms are severe, worsening or concerning.
+            </div>
+          </div>
+
+          <!-- Disclaimer Section -->
+          <div class="report-block">
+            <div class="disclaimer-box" id="reportDisclaimer">
+              <strong>Disclaimer:</strong> This is an informational AI analysis and not a medical diagnosis.
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="container footer-inner">
+      <div>24CS2506 – Building Applications using GPT-4 | Department of Computer Science & Engineering</div>
+      <div class="footer-safety">Educational Lab Demonstrator • Medical Safety & Uncertainty Communication Compliant</div>
+    </div>
+  </footer>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
